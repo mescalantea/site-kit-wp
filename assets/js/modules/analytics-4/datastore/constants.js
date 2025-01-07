@@ -88,6 +88,19 @@ export const CUSTOM_DIMENSION_DEFINITIONS = {
 	},
 };
 
+export const ENUM_CONVERSION_EVENTS = {
+	ADD_TO_CART: 'add_to_cart',
+	PURCHASE: 'purchase',
+	SUBMIT_LEAD_FORM: 'submit_lead_form',
+	GENERATE_LEAD: 'generate_lead',
+	CONTACT: 'contact',
+};
+export const CONVERSION_REPORTING_LEAD_EVENTS = [
+	ENUM_CONVERSION_EVENTS.CONTACT,
+	ENUM_CONVERSION_EVENTS.GENERATE_LEAD,
+	ENUM_CONVERSION_EVENTS.SUBMIT_LEAD_FORM,
+];
+
 // Audience enums.
 export const AUDIENCE_FILTER_CLAUSE_TYPE_ENUM = {
 	AUDIENCE_CLAUSE_TYPE_UNSPECIFIED: 'AUDIENCE_CLAUSE_TYPE_UNSPECIFIED',
@@ -209,3 +222,17 @@ export const SITE_KIT_AUDIENCE_DEFINITIONS = {
 		],
 	},
 };
+
+export const AUDIENCE_SEGMENTATION_SETUP_FORM = 'audiencePermissionsSetup';
+
+export const AUDIENCE_TILE_CUSTOM_DIMENSION_CREATE =
+	'audienceTileCustomDimensionCreate';
+
+export const AUDIENCE_TYPE_SORT_ORDER = {
+	USER_AUDIENCE: 0,
+	SITE_KIT_AUDIENCE: 1,
+	DEFAULT_AUDIENCE: 2,
+};
+
+export const AUDIENCE_ITEM_NEW_BADGE_SLUG_PREFIX =
+	'audience-selection-panel-expirable-new-badge-';

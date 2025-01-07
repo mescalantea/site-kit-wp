@@ -25,7 +25,11 @@ import { CORE_SITE } from '../../googlesitekit/datastore/site/constants';
 import fetchMock from 'fetch-mock';
 
 function Template() {
-	return <ConversionTrackingToggle />;
+	return (
+		<ConversionTrackingToggle>
+			Example text for enhanced conversion tracking
+		</ConversionTrackingToggle>
+	);
 }
 
 export const Enabled = Template.bind( {} );
@@ -35,11 +39,8 @@ Enabled.scenario = {
 	label: 'Components/Conversion Tracking/ConversionTrackingToggle/Enabled',
 	delay: 250,
 };
-Enabled.parameters = {
-	features: [ 'conversionInfra' ],
-};
 Enabled.decorators = [
-	( Story, { parameters } ) => {
+	( Story ) => {
 		const setupRegistry = ( registry ) => {
 			registry
 				.dispatch( CORE_SITE )
@@ -56,10 +57,7 @@ Enabled.decorators = [
 			);
 		};
 		return (
-			<WithRegistrySetup
-				func={ setupRegistry }
-				features={ parameters.features || [] }
-			>
+			<WithRegistrySetup func={ setupRegistry }>
 				<Story />
 			</WithRegistrySetup>
 		);
@@ -72,11 +70,8 @@ Default.scenario = {
 	label: 'Components/Conversion Tracking/ConversionTrackingToggle/Default',
 	delay: 250,
 };
-Default.parameters = {
-	features: [ 'conversionInfra' ],
-};
 Default.decorators = [
-	( Story, { parameters } ) => {
+	( Story ) => {
 		const setupRegistry = ( registry ) => {
 			registry
 				.dispatch( CORE_SITE )
@@ -93,10 +88,7 @@ Default.decorators = [
 			);
 		};
 		return (
-			<WithRegistrySetup
-				func={ setupRegistry }
-				features={ parameters.features || [] }
-			>
+			<WithRegistrySetup func={ setupRegistry }>
 				<Story />
 			</WithRegistrySetup>
 		);

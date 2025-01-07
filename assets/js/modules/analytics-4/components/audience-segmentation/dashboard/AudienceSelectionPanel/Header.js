@@ -30,20 +30,22 @@ import { __ } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { useSelect, useDispatch } from 'googlesitekit-data';
 import { CORE_LOCATION } from '../../../../../../googlesitekit/datastore/location/constants';
 import { CORE_SITE } from '../../../../../../googlesitekit/datastore/site/constants';
+import { CORE_USER } from '../../../../../../googlesitekit/datastore/user/constants';
 import useViewOnly from '../../../../../../hooks/useViewOnly';
 import Link from '../../../../../../components/Link';
 import { SelectionPanelHeader } from '../../../../../../components/SelectionPanel';
-
-const { useSelect, useDispatch } = Data;
 
 export default function Header( { closePanel } ) {
 	const isViewOnly = useViewOnly();
 
 	const settingsURL = useSelect( ( select ) =>
 		select( CORE_SITE ).getAdminURL( 'googlesitekit-settings' )
+	);
+	const isSavingSettings = useSelect( ( select ) =>
+		select( CORE_USER ).isSavingAudienceSettings()
 	);
 
 	const { navigateTo } = useDispatch( CORE_LOCATION );
@@ -70,8 +72,7 @@ export default function Header( { closePanel } ) {
 								<Link
 									secondary
 									onClick={ onSettingsClick }
-									// TODO: This should be disabled when saving settings.
-									disabled={ false }
+									disabled={ isSavingSettings }
 								/>
 							),
 							strong: <strong />,

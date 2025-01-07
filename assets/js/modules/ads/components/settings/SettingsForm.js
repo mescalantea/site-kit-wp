@@ -20,23 +20,26 @@
  * WordPress dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { Fragment } from '@wordpress/element';
+import { Fragment, createInterpolateElement } from '@wordpress/element';
 
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { useSelect } from 'googlesitekit-data';
 import { MODULES_ADS } from '../../datastore/constants';
 import ConversionTrackingToggle from '../../../../components/conversion-tracking/ConversionTrackingToggle';
 import StoreErrorNotices from '../../../../components/StoreErrorNotices';
 import { ConversionIDTextField } from '../common';
 import { useFeature } from '../../../../hooks/useFeature';
 import DisplaySetting from '../../../../components/DisplaySetting';
-const { useSelect } = Data;
+import { CORE_SITE } from '../../../../googlesitekit/datastore/site/constants';
+import Link from '../../../../components/Link';
+import SettingsGroup from '../../../../components/settings/SettingsGroup';
+import FirstPartyModeToggle from '../../../../components/first-party-mode/FirstPartyModeToggle';
 
 export default function SettingsForm() {
-	const iceEnabled = useFeature( 'conversionInfra' );
 	const paxEnabled = useFeature( 'adsPax' );
+	const fpmEnabled = useFeature( 'firstPartyMode' );
 
 	const conversionID = useSelect( ( select ) =>
 		select( MODULES_ADS ).getConversionID()
@@ -50,6 +53,12 @@ export default function SettingsForm() {
 		select( MODULES_ADS ).getExtCustomerID()
 	);
 
+	const conversionTrackingDocumentationURL = useSelect( ( select ) =>
+		select( CORE_SITE ).getDocumentationLinkURL(
+			'enhanced-conversion-tracking'
+		)
+	);
+
 	const conversionIDValue =
 		paxEnabled && paxConversionID ? paxConversionID : conversionID;
 
@@ -59,12 +68,6 @@ export default function SettingsForm() {
 		<Fragment>
 			<div className="googlesitekit-ads-settings-fields">
 				<StoreErrorNotices moduleSlug="ads" storeName={ MODULES_ADS } />
-
-				{ iceEnabled && (
-					<div className="googlesitekit-settings-module__meta-item">
-						<ConversionTrackingToggle />
-					</div>
-				) }
 
 				{ ! isPaxView && (
 					<div className="googlesitekit-setup-module__inputs">
@@ -115,6 +118,37 @@ export default function SettingsForm() {
 						</div>
 					</div>
 				) }
+
+				<SettingsGroup
+					title={ __(
+						'Improve your measurement',
+						'google-site-kit'
+					) }
+				>
+					<ConversionTrackingToggle>
+						{ createInterpolateElement(
+							__(
+								'To track the performance of your campaigns, Site Kit will enable enhanced conversion tracking. <a>Learn more</a>',
+								'google-site-kit'
+							),
+							{
+								a: (
+									<Link
+										href={
+											conversionTrackingDocumentationURL
+										}
+										external
+										aria-label={ __(
+											'Learn more about conversion tracking',
+											'google-site-kit'
+										) }
+									/>
+								),
+							}
+						) }
+					</ConversionTrackingToggle>
+					{ fpmEnabled && <FirstPartyModeToggle /> }
+				</SettingsGroup>
 			</div>
 		</Fragment>
 	);

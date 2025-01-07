@@ -20,11 +20,10 @@
  * Internal dependencies
  */
 import API from 'googlesitekit-api';
-import Data from 'googlesitekit-data';
+import { combineStores, commonStore } from 'googlesitekit-data';
 import {
 	createTestRegistry,
 	muteFetch,
-	unsubscribeFromAll,
 	untilResolved,
 } from '../../../../tests/js/utils';
 import { createExistingTagStore } from './create-existing-tag-store';
@@ -47,8 +46,8 @@ describe( 'createExistingTagStore store', () => {
 		registry = createTestRegistry();
 		store = registry.registerStore(
 			TEST_STORE,
-			Data.combineStores(
-				Data.commonStore,
+			combineStores(
+				commonStore,
 				createExistingTagStore( {
 					storeName: TEST_STORE,
 					tagMatchers,
@@ -63,10 +62,6 @@ describe( 'createExistingTagStore store', () => {
 
 	afterAll( () => {
 		API.setUsingCache( true );
-	} );
-
-	afterEach( () => {
-		unsubscribeFromAll( registry );
 	} );
 
 	describe( 'actions', () => {

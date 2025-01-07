@@ -24,56 +24,39 @@ import { __ } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import CheckFill from '../../../../../svg/icons/check-fill.svg';
-import { Button } from 'googlesitekit-components';
-import { Grid, Cell, Row } from '../../../../material-components';
+import SubtleNotification from '../../../../googlesitekit/notifications/components/layout/SubtleNotification';
+import Dismiss from '../../../../googlesitekit/notifications/components/common/Dismiss';
 import useQueryArg from '../../../../hooks/useQueryArg';
 
-export default function SetupSuccessSubtleNotification() {
-	const [ notification, setNotification ] = useQueryArg( 'notification' );
-	const [ slug, setSlug ] = useQueryArg( 'slug' );
+export default function SetupSuccessSubtleNotification( { id, Notification } ) {
+	const [ , setNotification ] = useQueryArg( 'notification' );
+	const [ , setSlug ] = useQueryArg( 'slug' );
 
 	const onDismiss = () => {
 		setNotification( undefined );
 		setSlug( undefined );
 	};
 
-	// The Ads module setup flow is the only module setup flow that uses this new style subtle
-	// notification, all others use the BannerNotification still.
-	if ( 'authentication_success' !== notification || slug !== 'ads' ) {
-		return null;
-	}
-
 	return (
-		<Grid>
-			<Row>
-				<Cell
-					alignMiddle
-					size={ 12 }
-					className="googlesitekit-subtle-notification"
-				>
-					<div className="googlesitekit-subtle-notification__icon">
-						<CheckFill width={ 24 } height={ 24 } />
-					</div>
-					<div className="googlesitekit-subtle-notification__content">
-						<p>
-							{ __(
-								'Success! Your Conversion Tracking ID was added to your site',
-								'google-site-kit'
-							) }
-						</p>
-						<p className="googlesitekit-subtle-notification__secondary_description">
-							{ __(
-								'You can now track conversions for your Ads campaigns',
-								'google-site-kit'
-							) }
-						</p>
-					</div>
-					<Button tertiary onClick={ onDismiss }>
-						{ __( 'Got it', 'google-site-kit' ) }
-					</Button>
-				</Cell>
-			</Row>
-		</Grid>
+		<Notification>
+			<SubtleNotification
+				title={ __(
+					'Success! Your Conversion Tracking ID was added to your site',
+					'google-site-kit'
+				) }
+				description={ __(
+					'You can now track conversions for your Ads campaigns',
+					'google-site-kit'
+				) }
+				dismissCTA={
+					<Dismiss
+						id={ id }
+						primary={ false }
+						dismissLabel={ __( 'Got it', 'google-site-kit' ) }
+						onDismiss={ onDismiss }
+					/>
+				}
+			/>
+		</Notification>
 	);
 }

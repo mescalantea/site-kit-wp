@@ -31,7 +31,7 @@ import { __ } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { useDispatch, useSelect } from 'googlesitekit-data';
 import { Button } from 'googlesitekit-components';
 import {
 	BREAKPOINT_SMALL,
@@ -48,8 +48,6 @@ import useActivateModuleCallback from '../../hooks/useActivateModuleCallback';
 import AdsSetupSVG from '../../../svg/graphics/ads-setup.svg';
 import AdsSetupTabletSVG from '../../../svg/graphics/ads-setup-tablet.svg';
 import AdsSetupMobileSVG from '../../../svg/graphics/ads-setup-mobile.svg';
-
-const { useSelect, useDispatch } = Data;
 
 function AdsModuleSetupCTAWidget( { WidgetNull, Widget } ) {
 	const breakpoint = useBreakpoint();
@@ -111,12 +109,14 @@ function AdsModuleSetupCTAWidget( { WidgetNull, Widget } ) {
 												'google-site-kit'
 											) }
 										</h3>
-										<p className="googlesitekit-setup-cta-banner__description">
-											{ __(
-												'Help drive sales, leads, or site traffic by getting your business in front of people who are actively searching Google for products or services you offer.',
-												'google-site-kit'
-											) }
-										</p>
+										<div className="googlesitekit-setup-cta-banner__description">
+											<p>
+												{ __(
+													'Help drive sales, leads, or site traffic by getting your business in front of people who are actively searching Google for products or services you offer.',
+													'google-site-kit'
+												) }
+											</p>
+										</div>
 
 										<div className="googlesitekit-setup-cta-banner__actions-wrapper">
 											<Button

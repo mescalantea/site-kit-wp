@@ -98,7 +98,7 @@ export function createPaxServices( registry, options = {} ) {
 	const { onCampaignCreated = null, onFinishAndCloseSignUpFlow = null } =
 		options;
 
-	const { select, __experimentalResolveSelect: resolveSelect } = registry;
+	const { select, resolveSelect } = registry;
 	const getToken = createMemoizedGetToken();
 
 	const services = {
@@ -167,8 +167,7 @@ export function createPaxServices( registry, options = {} ) {
 			getSupportedConversionTrackingTypes: async () => {
 				return {
 					conversionTrackingTypes: [
-						// @TODO: Include TYPE_CONVERSION_EVENT in a future update.
-						// 'TYPE_CONVERSION_EVENT',
+						'TYPE_CONVERSION_EVENT',
 						'TYPE_PAGE_VIEW',
 					],
 				};

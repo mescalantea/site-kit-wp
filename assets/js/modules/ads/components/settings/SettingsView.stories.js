@@ -47,23 +47,26 @@ function Template() {
 export const Default = Template.bind( null );
 Default.storyName = 'Default';
 Default.scenario = {};
+Default.parameters = {
+	features: [ 'firstPartyMode' ],
+};
 
 export const IceEnabled = Template.bind( null );
 IceEnabled.storyName = 'With ICE enabled';
-IceEnabled.parameters = {
-	features: [ 'conversionInfra' ],
-};
 IceEnabled.args = {
 	enhancedConversionTracking: true,
 };
-
-export const IceDisabled = Template.bind( null );
-IceDisabled.storyName = 'With ICE disabled';
-IceDisabled.parameters = {
-	features: [ 'conversionInfra' ],
+IceEnabled.parameters = {
+	features: [ 'firstPartyMode' ],
 };
-IceDisabled.args = {
-	enhancedConversionTracking: false,
+
+export const FPMEnabled = Template.bind( null );
+FPMEnabled.storyName = 'With First-party Mode Enabled';
+FPMEnabled.args = {
+	firstPartyMode: true,
+};
+FPMEnabled.parameters = {
+	features: [ 'firstPartyMode' ],
 };
 
 export default {
@@ -83,13 +86,19 @@ export default {
 					conversionID: 'AW-123456789',
 				} );
 
-				if ( args.hasOwnProperty( 'enhancedConversionTracking' ) ) {
-					registry
-						.dispatch( CORE_SITE )
-						.setConversionTrackingEnabled(
-							args.enhancedConversionTracking
-						);
-				}
+				registry
+					.dispatch( CORE_SITE )
+					.setConversionTrackingEnabled(
+						args.enhancedConversionTracking || false
+					);
+
+				registry
+					.dispatch( CORE_SITE )
+					.receiveGetFirstPartyModeSettings( {
+						isEnabled: args.firstPartyMode || false,
+						isFPMHealthy: args.firstPartyMode || false,
+						isScriptAccessEnabled: args.firstPartyMode || false,
+					} );
 			};
 
 			return (
@@ -107,12 +116,12 @@ PaxConnected.scenario = {
 	label: 'Modules/Ads/Settings/SettingsView/PAX',
 };
 PaxConnected.parameters = {
-	features: [ 'adsPax' ],
+	features: [ 'adsPax', 'firstPartyMode' ],
 };
 PaxConnected.decorators = [
 	( Story ) => {
 		const setupRegistry = ( registry ) => {
-			// Unset the value set in the prrevious scenario.
+			// Unset the value set in the previous scenario.
 			registry.dispatch( MODULES_ADS ).setConversionID( null );
 
 			registry.dispatch( MODULES_ADS ).receiveGetSettings( {

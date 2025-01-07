@@ -28,6 +28,7 @@ use Google\Site_Kit\Core\Modules\Module_With_Tag_Trait;
 use Google\Site_Kit\Core\Modules\Tags\Module_Tag_Matchers;
 use Google\Site_Kit\Core\Permissions\Permissions;
 use Google\Site_Kit\Core\Site_Health\Debug_Data;
+use Google\Site_Kit\Core\Tags\First_Party_Mode\First_Party_Mode;
 use Google\Site_Kit\Modules\Ads\PAX_Config;
 use Google\Site_Kit\Modules\Ads\Settings;
 use Google\Site_Kit\Modules\Ads\Has_Tag_Guard;
@@ -114,7 +115,7 @@ final class Ads extends Module implements Module_With_Assets, Module_With_Debug_
 				'googlesitekit-ads-pax-config',
 				array(
 					'global'        => '_googlesitekitPAXConfig',
-					'data_callback' => function() {
+					'data_callback' => function () {
 						if ( ! current_user_can( Permissions::VIEW_AUTHENTICATED_DASHBOARD ) ) {
 							return array();
 						}
@@ -134,14 +135,14 @@ final class Ads extends Module implements Module_With_Assets, Module_With_Debug_
 					// The Ads module is already connected.
 					$this->is_connected() ||
 					// Or the user is on the Ads module setup screen.
-					is_admin() && $is_googlesitekit_dashboard && $is_ads_slug && $is_re_auth
+					( ( ( is_admin() && $is_googlesitekit_dashboard ) && $is_ads_slug ) && $is_re_auth )
 				)
 			) {
 				$assets[] = new Script(
 					'googlesitekit-ads-pax-integrator',
 					array(
 						// When updating, mirror the fixed version for google-pax-sdk in package.json.
-						'src'          => 'https://www.gstatic.com/pax/1.0.8/pax_integrator.js',
+						'src'          => 'https://www.gstatic.com/pax/1.1.0/pax_integrator.js',
 						'execution'    => 'async',
 						'dependencies' => array(
 							'googlesitekit-ads-pax-config',
@@ -206,8 +207,7 @@ final class Ads extends Module implements Module_With_Assets, Module_With_Debug_
 		return array(
 			'slug'        => 'ads',
 			'name'        => _x( 'Ads', 'Service name', 'google-site-kit' ),
-			'description' => __( 'Track conversions for your existing Google Ads campaigns', 'google-site-kit' ),
-			'order'       => 1,
+			'description' => Feature_Flags::enabled( 'adsPax' ) ? __( 'Grow sales, leads or awareness for your business by advertising with Google Ads', 'google-site-kit' ) : __( 'Track conversions for your existing Google Ads campaigns', 'google-site-kit' ),
 			'homepage'    => __( 'https://google.com/ads', 'google-site-kit' ),
 		);
 	}
@@ -307,13 +307,24 @@ final class Ads extends Module implements Module_With_Assets, Module_With_Debug_
 	public function get_debug_fields() {
 		$settings = $this->get_settings()->get();
 
-		return array(
+		$debug_fields = array(
 			'ads_conversion_tracking_id' => array(
-				'label' => __( 'Ads Conversion Tracking ID', 'google-site-kit' ),
+				'label' => __( 'Ads: Conversion Tracking ID', 'google-site-kit' ),
 				'value' => $settings['conversionID'],
 				'debug' => Debug_Data::redact_debug_value( $settings['conversionID'] ),
 			),
 		);
+
+		// Add fields from First-party Mode.
+		// Note: fields are added in both Analytics and Ads so that the debug fields will show if either module is enabled.
+		if ( Feature_Flags::enabled( 'firstPartyMode' ) ) {
+			$first_party_mode             = new First_Party_Mode( $this->context );
+			$fields_from_first_party_mode = $first_party_mode->get_debug_fields();
+
+			$debug_fields = array_merge( $debug_fields, $fields_from_first_party_mode );
+		}
+
+		return $debug_fields;
 	}
 
 	/**
@@ -326,5 +337,4 @@ final class Ads extends Module implements Module_With_Assets, Module_With_Debug_
 	public function get_tag_matchers() {
 		return new Tag_Matchers();
 	}
-
 }

@@ -56,6 +56,11 @@ export default {
 						active: true,
 						connected: true,
 					},
+					{
+						slug: 'ads',
+						active: true,
+						connected: true,
+					},
 				] );
 
 				registry.dispatch( MODULES_ADS ).receiveGetSettings( {
@@ -73,6 +78,10 @@ export default {
 				registry
 					.dispatch( CORE_SITE )
 					.receiveGetConsentModeSettings( { enabled: false } );
+
+				registry
+					.dispatch( CORE_SITE )
+					.receiveGetAdsMeasurementStatus( { connected: true } );
 
 				fetchMock.postOnce(
 					new RegExp(

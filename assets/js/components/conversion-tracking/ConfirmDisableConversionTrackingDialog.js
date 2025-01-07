@@ -18,6 +18,7 @@
  * External dependencies
  */
 import PropTypes from 'prop-types';
+import { useMount } from 'react-use';
 
 /**
  * WordPress dependencies
@@ -28,11 +29,15 @@ import { __ } from '@wordpress/i18n';
  * Internal dependencies
  */
 import ModalDialog from '../ModalDialog';
+import { trackEvent } from '../../util';
+import useViewContext from '../../hooks/useViewContext';
 
 export default function ConfirmDisableConversionTrackingDialog( {
 	onConfirm,
 	onCancel,
 } ) {
+	const viewContext = useViewContext();
+
 	const subtitle = __(
 		'By disabling enhanced conversion tracking, you will no longer have access to:',
 		'google-site-kit'
@@ -46,8 +51,13 @@ export default function ConfirmDisableConversionTrackingDialog( {
 		),
 	];
 
+	useMount( () => {
+		trackEvent( `${ viewContext }`, 'ect_view_modal' );
+	} );
+
 	return (
 		<ModalDialog
+			className="googlesitekit-settings-module__confirm-disconnect-modal"
 			dialogActive
 			title={ __(
 				'Disable enhanced conversion tracking',
@@ -56,6 +66,7 @@ export default function ConfirmDisableConversionTrackingDialog( {
 			subtitle={ subtitle }
 			handleConfirm={ onConfirm }
 			handleDialog={ onCancel }
+			onClose={ onCancel }
 			provides={ provides }
 			confirmButton={ __( 'Disable', 'google-site-kit' ) }
 			danger

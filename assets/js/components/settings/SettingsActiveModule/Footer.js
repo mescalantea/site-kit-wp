@@ -21,7 +21,6 @@
  */
 import PropTypes from 'prop-types';
 import { useHistory, useParams } from 'react-router-dom';
-import { isEmpty } from 'lodash';
 
 /**
  * WordPress dependencies
@@ -33,7 +32,7 @@ import { Fragment, useCallback } from '@wordpress/element';
  * Internal dependencies
  */
 import { Button, SpinnerButton } from 'googlesitekit-components';
-import Data from 'googlesitekit-data';
+import { useSelect, useDispatch } from 'googlesitekit-data';
 import { CORE_MODULES } from '../../../googlesitekit/modules/datastore/constants';
 import { Cell, Grid, Row } from '../../../material-components';
 import PencilIcon from '../../../../svg/icons/pencil.svg';
@@ -42,9 +41,7 @@ import Link from '../../Link';
 import { trackEvent } from '../../../util';
 import { clearCache } from '../../../googlesitekit/api/cache';
 import { CORE_UI } from '../../../googlesitekit/datastore/ui/constants';
-import { CORE_USER } from '../../../googlesitekit/datastore/user/constants';
 import useViewContext from '../../../hooks/useViewContext';
-const { useDispatch, useSelect } = Data;
 
 export default function Footer( props ) {
 	const { slug } = props;
@@ -59,6 +56,9 @@ export default function Footer( props ) {
 	const dialogActiveKey = `module-${ slug }-dialogActive`;
 	const isSavingKey = `module-${ slug }-isSaving`;
 
+	const areSettingsEditDependenciesLoaded = useSelect( ( select ) =>
+		select( CORE_MODULES ).areSettingsEditDependenciesLoaded( slug )
+	);
 	const canSubmitChanges = useSelect( ( select ) =>
 		select( CORE_MODULES ).canSubmitChanges( slug )
 	);
@@ -78,12 +78,9 @@ export default function Footer( props ) {
 		select( CORE_UI ).getValue( isSavingKey )
 	);
 
-	const moduleHomepage = useSelect( ( select ) => {
-		if ( ! module || isEmpty( module.homepage ) ) {
-			return undefined;
-		}
-		return select( CORE_USER ).getAccountChooserURL( module.homepage );
-	} );
+	const moduleHomepage = useSelect( ( select ) =>
+		select( CORE_MODULES ).getDetailsLinkURL( slug )
+	);
 
 	const { submitChanges } = useDispatch( CORE_MODULES );
 	const { clearErrors } = useDispatch( module?.storeName ) || {};
@@ -117,6 +114,7 @@ export default function Footer( props ) {
 					'update_module_settings',
 					slug
 				);
+				setValue( errorKey, undefined );
 				await clearErrors?.();
 				history.push( `/connected-services/${ slug }` );
 
@@ -147,30 +145,6 @@ export default function Footer( props ) {
 		);
 	}, [ slug, viewContext ] );
 
-	// Check if the resolution for the specified selector has finished.
-	// This allows us to determine if the data needed by the module is still being loaded.
-	// The primary reason for this loading check is to disable the submit button
-	// while the necessary data for the settings is still being loaded, preventing
-	// premature interactions by the user.
-	const isLoading = useSelect( ( select ) => {
-		const resolutionMapping = {
-			'analytics-4': 'getAccountSummaries',
-			tagmanager: 'getAccounts',
-			'search-console': 'getMatchedProperties',
-		};
-		const resolutionSelector = resolutionMapping[ slug ];
-
-		if ( ! module || ! resolutionSelector ) {
-			return false;
-		}
-
-		const storeName = module.storeName;
-
-		return ! select( storeName ).hasFinishedResolution(
-			resolutionSelector
-		);
-	} );
-
 	let buttonText = __( 'Save', 'google-site-kit' );
 
 	if ( haveSettingsChanged ) {
@@ -195,7 +169,7 @@ export default function Footer( props ) {
 					<SpinnerButton
 						disabled={
 							isSaving ||
-							isLoading ||
+							! areSettingsEditDependenciesLoaded ||
 							( ! canSubmitChanges && // Do not allow the form to be saved if the form is invalid.
 								haveSettingsChanged ) // Allow the form to be saved if the user hasn't made any changes.
 						}

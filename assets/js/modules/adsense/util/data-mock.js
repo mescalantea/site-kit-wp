@@ -30,10 +30,9 @@ import { map, reduce } from 'rxjs/operators';
  * Internal dependencies
  */
 import { MODULES_ADSENSE } from '../datastore/constants';
-import { getDateString, isValidDateString } from '../../../util';
+import { getDateString, isValidDateString, stringToDate } from '../../../util';
 import { validateMetrics } from './report-validation';
 import { dateInstanceToAdSenseDate } from './date';
-import { stringToDate } from '../../../util/date-range/string-to-date';
 
 const METRIC_RATIO = 'METRIC_RATIO';
 const METRIC_TALLY = 'METRIC_TALLY';
@@ -258,9 +257,14 @@ export function getAdSenseMockResponse( args ) {
 	const ops = [
 		// Converts range number to a date string.
 		map( ( item ) => {
+			// Valid use of `new Date()` with an argument.
+			// eslint-disable-next-line sitekit/no-direct-date
 			const updatedMilliseconds = new Date( startDate ).setDate(
 				startDate.getDate() + item
 			);
+
+			// Valid use of `new Date()` with an argument.
+			// eslint-disable-next-line sitekit/no-direct-date
 			return getDateString( new Date( updatedMilliseconds ) );
 		} ),
 		// Add dimension and metric values.

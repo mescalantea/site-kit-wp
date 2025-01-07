@@ -20,10 +20,7 @@
  * Internal dependencies
  */
 import API from 'googlesitekit-api';
-import {
-	createTestRegistry,
-	unsubscribeFromAll,
-} from '../../../../../tests/js/utils';
+import { createTestRegistry } from '../../../../../tests/js/utils';
 import { MODULES_SEARCH_CONSOLE } from './constants';
 import {
 	validateCanSubmitChanges,
@@ -40,10 +37,6 @@ describe( 'modules/search-console settings', () => {
 
 	beforeEach( () => {
 		registry = createTestRegistry();
-	} );
-
-	afterEach( () => {
-		unsubscribeFromAll( registry );
 	} );
 
 	afterAll( () => {
@@ -130,6 +123,32 @@ describe( 'modules/search-console settings', () => {
 			expect( () =>
 				validateCanSubmitChanges( registry.select )
 			).not.toThrow( INVARIANT_SETTINGS_NOT_CHANGED );
+		} );
+	} );
+
+	describe( 'areSettingsEditDependenciesLoaded', () => {
+		it( 'should return false if getMatchedProperties selector has not resolved', () => {
+			registry
+				.dispatch( MODULES_SEARCH_CONSOLE )
+				.startResolution( 'getMatchedProperties', [] );
+
+			expect(
+				registry
+					.select( MODULES_SEARCH_CONSOLE )
+					.areSettingsEditDependenciesLoaded()
+			).toBe( false );
+		} );
+
+		it( 'should return true if getMatchedProperties selector has resolved', () => {
+			registry
+				.dispatch( MODULES_SEARCH_CONSOLE )
+				.finishResolution( 'getMatchedProperties', [] );
+
+			expect(
+				registry
+					.select( MODULES_SEARCH_CONSOLE )
+					.areSettingsEditDependenciesLoaded()
+			).toBe( true );
 		} );
 	} );
 } );

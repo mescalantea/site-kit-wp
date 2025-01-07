@@ -31,7 +31,7 @@ import { useState, useCallback } from '@wordpress/element';
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { useSelect, useDispatch } from 'googlesitekit-data';
 import ModuleIcon from '../ModuleIcon';
 import Spinner from '../Spinner';
 import Link from '../Link';
@@ -41,10 +41,10 @@ import NewBadge from '../NewBadge.js';
 import { CORE_SITE } from '../../googlesitekit/datastore/site/constants';
 import { CORE_MODULES } from '../../googlesitekit/modules/datastore/constants';
 import { CORE_LOCATION } from '../../googlesitekit/datastore/location/constants';
-import { EXPERIMENTAL_MODULES } from '../dashboard-sharing/DashboardSharingSettings/constants';
+import { NEW_MODULES, BETA_MODULES, EXPERIMENTAL_MODULES } from './constants';
+import { setItem } from '../../googlesitekit/api/cache';
 import { trackEvent } from '../../util';
 import useViewContext from '../../hooks/useViewContext';
-const { useSelect, useDispatch } = Data;
 
 export default function SetupModule( { slug, name, description } ) {
 	const viewContext = useViewContext();
@@ -65,6 +65,8 @@ export default function SetupModule( { slug, name, description } ) {
 				'activate_module',
 				slug
 			);
+
+			await setItem( 'module_setup', slug, { ttl: 300 } );
 
 			navigateTo( response.moduleReauthURL );
 		} else {
@@ -115,7 +117,15 @@ export default function SetupModule( { slug, name, description } ) {
 							label={ __( 'Experimental', 'google-site-kit' ) }
 						/>
 					) }
-					{ slug === 'ads' && <NewBadge hasNoSpacing /> }
+					{ BETA_MODULES.includes( slug ) && (
+						<Badge
+							className="googlesitekit-badge--beta"
+							label={ __( 'Beta', 'google-site-kit' ) }
+						/>
+					) }
+					{ NEW_MODULES.includes( slug ) && (
+						<NewBadge hasNoSpacing />
+					) }
 				</div>
 			</div>
 			<p className="googlesitekit-settings-connect-module__text">

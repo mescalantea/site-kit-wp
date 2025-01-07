@@ -25,13 +25,12 @@ import { createInterpolateElement } from '@wordpress/element';
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { useSelect } from 'googlesitekit-data';
 import {
 	MODULES_ANALYTICS_4,
 	PROPERTY_CREATE,
 } from '../../datastore/constants';
 import OptionalSettingsView from './OptionalSettingsView';
-import SettingsEnhancedMeasurementView from './SettingsEnhancedMeasurementView';
 import StoreErrorNotices from '../../../../components/StoreErrorNotices';
 import DisplaySetting, {
 	BLANK_SPACE,
@@ -40,11 +39,15 @@ import Link from '../../../../components/Link';
 import VisuallyHidden from '../../../../components/VisuallyHidden';
 import { escapeURI } from '../../../../util/escape-uri';
 import { useFeature } from '../../../../hooks/useFeature';
+import SettingsStatuses from '../../../../components/settings/SettingsStatuses';
+import {
+	isValidPropertyID,
+	isValidWebDataStreamID,
+} from '../../utils/validation';
 import { CORE_SITE } from '../../../../googlesitekit/datastore/site/constants';
-const { useSelect } = Data;
 
 export default function SettingsView() {
-	const iceEnabled = useFeature( 'conversionInfra' );
+	const fpmEnabled = useFeature( 'firstPartyMode' );
 
 	const accountID = useSelect( ( select ) =>
 		select( MODULES_ANALYTICS_4 ).getAccountID()
@@ -70,12 +73,41 @@ export default function SettingsView() {
 		select( MODULES_ANALYTICS_4 ).getServiceEntityAccessURL()
 	);
 
-	const isConversionTrackingEnabled = useSelect( ( select ) => {
-		if ( ! iceEnabled ) {
+	const webDataStreamID = useSelect( ( select ) =>
+		select( MODULES_ANALYTICS_4 ).getWebDataStreamID()
+	);
+
+	const isEnhancedMeasurementStreamEnabled = useSelect( ( select ) => {
+		if (
+			! isValidPropertyID( propertyID ) ||
+			! isValidWebDataStreamID( webDataStreamID )
+		) {
+			return null;
+		}
+
+		return select( MODULES_ANALYTICS_4 ).isEnhancedMeasurementStreamEnabled(
+			propertyID,
+			webDataStreamID
+		);
+	} );
+
+	const isConversionTrackingEnabled = useSelect( ( select ) =>
+		select( CORE_SITE ).isConversionTrackingEnabled()
+	);
+
+	const isFPMEnabled = useSelect( ( select ) => {
+		if ( ! fpmEnabled ) {
 			return false;
 		}
 
-		return select( CORE_SITE ).isConversionTrackingEnabled();
+		const { isFirstPartyModeEnabled, isFPMHealthy, isScriptAccessEnabled } =
+			select( CORE_SITE );
+
+		return (
+			isFirstPartyModeEnabled() &&
+			isFPMHealthy() &&
+			isScriptAccessEnabled()
+		);
 	} );
 
 	if ( ! propertyID || propertyID === PROPERTY_CREATE ) {
@@ -194,28 +226,34 @@ export default function SettingsView() {
 				</div>
 			</div>
 
-			<SettingsEnhancedMeasurementView />
+			<OptionalSettingsView />
 
-			{ iceEnabled && (
-				<div className="googlesitekit-settings-module__meta-item">
-					<h5 className="googlesitekit-settings-module__meta-item-type">
-						{ __(
+			<SettingsStatuses
+				statuses={ [
+					{
+						label: __( 'Enhanced Measurement', 'google-site-kit' ),
+						status: isEnhancedMeasurementStreamEnabled,
+					},
+					{
+						label: __(
 							'Enhanced Conversion Tracking',
 							'google-site-kit'
-						) }
-					</h5>
-					<p className="googlesitekit-settings-module__meta-item-data">
-						{ isConversionTrackingEnabled &&
-							__( 'Enabled', 'google-site-kit' ) }
-						{ isConversionTrackingEnabled === false &&
-							__( 'Disabled', 'google-site-kit' ) }
-						{ isConversionTrackingEnabled === undefined &&
-							BLANK_SPACE }
-					</p>
-				</div>
-			) }
-
-			<OptionalSettingsView />
+						),
+						status: isConversionTrackingEnabled,
+					},
+					...( fpmEnabled
+						? [
+								{
+									label: __(
+										'First-party Mode',
+										'google-site-kit'
+									),
+									status: isFPMEnabled,
+								},
+						  ]
+						: [] ),
+				] }
+			/>
 		</div>
 	);
 }

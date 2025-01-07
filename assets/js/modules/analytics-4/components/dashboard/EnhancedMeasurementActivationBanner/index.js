@@ -25,7 +25,7 @@ import { __ } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { useSelect, useDispatch } from 'googlesitekit-data';
 import { CORE_FORMS } from '../../../../../googlesitekit/datastore/forms/constants';
 import { CORE_MODULES } from '../../../../../googlesitekit/modules/datastore/constants';
 import { CORE_USER } from '../../../../../googlesitekit/datastore/user/constants';
@@ -49,15 +49,13 @@ import { AdminMenuTooltip } from '../../../../../components/AdminMenuTooltip/Adm
 import InProgressBanner from './InProgressBanner';
 import SetupBanner from './SetupBanner';
 import SuccessBanner from './SuccessBanner';
-import { getTimeInSeconds, trackEvent } from '../../../../../util';
+import { MONTH_IN_SECONDS, trackEvent } from '../../../../../util';
 import whenActive from '../../../../../util/when-active';
 import {
 	isValidPropertyID,
 	isValidWebDataStreamID,
 } from '../../../utils/validation';
 import useViewContext from '../../../../../hooks/useViewContext';
-
-const { useSelect, useDispatch } = Data;
 
 function EnhancedMeasurementActivationBanner() {
 	const viewContext = useViewContext();
@@ -80,6 +78,12 @@ function EnhancedMeasurementActivationBanner() {
 
 	const isBannerDismissed = useSelect( ( select ) =>
 		select( CORE_USER ).isItemDismissed(
+			ENHANCED_MEASUREMENT_ACTIVATION_BANNER_DISMISSED_ITEM_KEY
+		)
+	);
+
+	const isDismissingBanner = useSelect( ( select ) =>
+		select( CORE_USER ).isDismissingItem(
 			ENHANCED_MEASUREMENT_ACTIVATION_BANNER_DISMISSED_ITEM_KEY
 		)
 	);
@@ -129,7 +133,7 @@ function EnhancedMeasurementActivationBanner() {
 		dismissItem(
 			ENHANCED_MEASUREMENT_ACTIVATION_BANNER_DISMISSED_ITEM_KEY,
 			{
-				expiresInSeconds: getTimeInSeconds( 'month' ),
+				expiresInSeconds: MONTH_IN_SECONDS,
 			}
 		);
 	}
@@ -207,7 +211,11 @@ function EnhancedMeasurementActivationBanner() {
 		);
 	}
 
-	if ( ! isEnhancedMeasurementInitiallyDisabled || isBannerDismissed ) {
+	if (
+		! isEnhancedMeasurementInitiallyDisabled ||
+		isBannerDismissed ||
+		isDismissingBanner
+	) {
 		return null;
 	}
 

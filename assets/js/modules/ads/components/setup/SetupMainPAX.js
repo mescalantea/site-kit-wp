@@ -28,6 +28,7 @@ import {
 	createInterpolateElement,
 	Fragment,
 	useCallback,
+	useEffect,
 	useRef,
 } from '@wordpress/element';
 import { __, _x } from '@wordpress/i18n';
@@ -36,8 +37,8 @@ import { addQueryArgs } from '@wordpress/url';
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
-import { SpinnerButton } from 'googlesitekit-components';
+import { useSelect, useDispatch, useRegistry } from 'googlesitekit-data';
+import { ProgressBar, SpinnerButton } from 'googlesitekit-components';
 import AdsIcon from '../../../../../svg/graphics/ads.svg';
 import SetupForm from './SetupForm';
 import SupportLink from '../../../../components/SupportLink';
@@ -57,7 +58,7 @@ import {
 	PAX_SETUP_STEP,
 	PAX_SETUP_SUCCESS_NOTIFICATION,
 } from '../../pax/constants';
-const { useSelect, useDispatch, useRegistry } = Data;
+import { useFeature } from '../../../../hooks/useFeature';
 
 export default function SetupMainPAX( { finishSetup } ) {
 	const [ showPaxAppQueryParam, setShowPaxAppQueryParam ] =
@@ -132,7 +133,7 @@ export default function SetupMainPAX( { finishSetup } ) {
 	const registry = useRegistry();
 	const onCompleteSetup = useCallbackOne( async () => {
 		// Encapsulate dependencies to avoid function changing after launch.
-		const { select, __experimentalResolveSelect: resolveSelect } = registry;
+		const { select, resolveSelect } = registry;
 		await resolveSelect( CORE_SITE ).getSiteInfo();
 		const redirectURL = select( CORE_SITE ).getAdminURL(
 			'googlesitekit-dashboard',
@@ -156,6 +157,14 @@ export default function SetupMainPAX( { finishSetup } ) {
 		paxAppRef.current = app;
 	}, [] );
 
+	const isAdsPaxEnabled = useFeature( 'adsPax' );
+
+	useEffect( () => {
+		if ( isAdsPaxEnabled ) {
+			createAccount();
+		}
+	}, [ isAdsPaxEnabled, createAccount ] );
+
 	return (
 		<div className="googlesitekit-setup-module googlesitekit-setup-module--ads">
 			<div className="googlesitekit-setup-module__step">
@@ -170,6 +179,8 @@ export default function SetupMainPAX( { finishSetup } ) {
 			<div className="googlesitekit-setup-module__step">
 				<AdBlockerWarning moduleSlug="ads" />
 
+				{ isAdsPaxEnabled && ! showPaxAppStep && <ProgressBar /> }
+
 				{ ! isAdBlockerActive &&
 					PAX_SETUP_STEP.LAUNCH === showPaxAppStep &&
 					hasAdwordsScope && (
@@ -181,7 +192,8 @@ export default function SetupMainPAX( { finishSetup } ) {
 						/>
 					) }
 
-				{ ! isAdBlockerActive &&
+				{ ! isAdsPaxEnabled &&
+					! isAdBlockerActive &&
 					( ! showPaxAppStep || ! hasAdwordsScope ) && (
 						<Fragment>
 							<p>

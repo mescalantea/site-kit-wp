@@ -19,23 +19,20 @@
 /**
  * Internal dependencies
  */
-import { Provider as ViewContextProvider } from '../../../../../components/Root/ViewContextContext';
 import AudienceSegmentationSetupSuccessSubtleNotification from './AudienceSegmentationSetupSuccessSubtleNotification';
+import { withNotificationComponentProps } from '../../../../../googlesitekit/notifications/util/component-props';
 import WithRegistrySetup from '../../../../../../../tests/js/WithRegistrySetup';
-import { MODULES_ANALYTICS_4 } from '../../../../../modules/analytics-4/datastore/constants';
-import { VIEW_CONTEXT_MAIN_DASHBOARD } from '../../../../../googlesitekit/constants';
 import { CORE_USER } from '../../../../../googlesitekit/datastore/user/constants';
 
-function Template() {
-	return (
-		<ViewContextProvider value={ VIEW_CONTEXT_MAIN_DASHBOARD }>
-			<AudienceSegmentationSetupSuccessSubtleNotification />
-		</ViewContextProvider>
-	);
-}
+const NotificationWithComponentProps = withNotificationComponentProps(
+	'setup-success-notification-audiences'
+)( AudienceSegmentationSetupSuccessSubtleNotification );
 
+function Template() {
+	return <NotificationWithComponentProps />;
+}
 export const Default = Template.bind( {} );
-Default.storyName = 'Default';
+Default.storyName = 'AudienceSegmentationSetupSuccessSubtleNotification';
 Default.scenario = {
 	label: 'Modules/Analytics4/Components/AudienceSegmentation/Dashboard/AudienceSegmentationSetupSuccessSubtleNotification',
 };
@@ -45,13 +42,10 @@ export default {
 	decorators: [
 		( Story ) => {
 			const setupRegistry = ( registry ) => {
-				registry.dispatch( CORE_USER ).receiveGetDismissedItems( [] );
-
-				registry
-					.dispatch( MODULES_ANALYTICS_4 )
-					.receiveGetAudienceSettings( {
-						configuredAudiences: [ 'audienceA', 'audienceB' ],
-					} );
+				registry.dispatch( CORE_USER ).receiveGetAudienceSettings( {
+					isAudienceSegmentationWidgetHidden: false,
+					configuredAudiences: null,
+				} );
 			};
 
 			return (

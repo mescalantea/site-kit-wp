@@ -64,28 +64,32 @@ class SettingsTest extends SettingsTestCase {
 
 		$this->assertEqualSetsWithIndex(
 			array(
-				'accountID'                        => '',
-				'adsConversionID'                  => '',
-				'propertyID'                       => '',
-				'webDataStreamID'                  => '',
-				'measurementID'                    => '',
-				'trackingDisabled'                 => array( 'loggedinUsers' ),
-				'useSnippet'                       => true,
-				'ownerID'                          => 0,
-				'googleTagID'                      => '',
-				'googleTagAccountID'               => '',
-				'googleTagContainerID'             => '',
-				'googleTagContainerDestinationIDs' => null,
-				'googleTagLastSyncedAtMs'          => 0,
-				'availableCustomDimensions'        => null,
-				'propertyCreateTime'               => 0,
-				'adSenseLinked'                    => false,
-				'adSenseLinkedLastSyncedAt'        => 0,
-				'adsConversionIDMigratedAtMs'      => 0,
-				'adsLinked'                        => false,
-				'adsLinkedLastSyncedAt'            => 0,
-				'availableAudiences'               => null,
-				'availableAudiencesLastSyncedAt'   => 0,
+				'accountID'                            => '',
+				'adsConversionID'                      => '',
+				'propertyID'                           => '',
+				'webDataStreamID'                      => '',
+				'measurementID'                        => '',
+				'trackingDisabled'                     => array( 'loggedinUsers' ),
+				'useSnippet'                           => true,
+				'ownerID'                              => 0,
+				'googleTagID'                          => '',
+				'googleTagAccountID'                   => '',
+				'googleTagContainerID'                 => '',
+				'googleTagContainerDestinationIDs'     => null,
+				'googleTagLastSyncedAtMs'              => 0,
+				'availableCustomDimensions'            => null,
+				'propertyCreateTime'                   => 0,
+				'adSenseLinked'                        => false,
+				'adSenseLinkedLastSyncedAt'            => 0,
+				'adsConversionIDMigratedAtMs'          => 0,
+				'adsLinked'                            => false,
+				'adsLinkedLastSyncedAt'                => 0,
+				'availableAudiences'                   => null,
+				'availableAudiencesLastSyncedAt'       => 0,
+				'audienceSegmentationSetupCompletedBy' => null,
+				'detectedEvents'                       => array(),
+				'lostConversionEventsLastUpdateAt'     => 0,
+				'newConversionEventsLastUpdateAt'      => 0,
 			),
 			get_option( Settings::OPTION )
 		);
@@ -139,7 +143,7 @@ class SettingsTest extends SettingsTestCase {
 		// Ensure admin user has Permissions::MANAGE_OPTIONS cap regardless of authentication.
 		add_filter(
 			'map_meta_cap',
-			function( $caps, $cap ) {
+			function ( $caps, $cap ) {
 				if ( Permissions::MANAGE_OPTIONS === $cap ) {
 					return array( 'manage_options' );
 				}
@@ -170,5 +174,4 @@ class SettingsTest extends SettingsTestCase {
 
 		return $tests;
 	}
-
 }

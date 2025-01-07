@@ -31,8 +31,8 @@ import { createRegistry } from '@wordpress/data';
  * Internal dependencies
  */
 import API from 'googlesitekit-api';
-import Data from 'googlesitekit-data';
-import { subscribeUntil, unsubscribeFromAll } from '../../../../tests/js/utils';
+import { combineStores } from 'googlesitekit-data';
+import { subscribeUntil } from '../../../../tests/js/utils';
 import { createFetchStore } from './create-fetch-store';
 import { createErrorStore } from './create-error-store';
 
@@ -91,10 +91,6 @@ describe( 'createFetchStore store', () => {
 
 	afterAll( () => {
 		API.setUsingCache( true );
-	} );
-
-	afterEach( () => {
-		unsubscribeFromAll( registry );
 	} );
 
 	describe( 'actions', () => {
@@ -231,7 +227,7 @@ describe( 'createFetchStore store', () => {
 				beforeEach( () => {
 					registry = createRegistry();
 
-					storeDefinition = Data.combineStores(
+					storeDefinition = combineStores(
 						createFetchStore( STORE_PARAMS ),
 						createErrorStore( TEST_STORE )
 					);

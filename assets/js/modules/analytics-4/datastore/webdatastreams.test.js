@@ -31,7 +31,6 @@ import {
 	provideModules,
 	provideSiteInfo,
 	provideUserAuthentication,
-	unsubscribeFromAll,
 	untilResolved,
 	waitForDefaultTimeouts,
 } from '../../../../../tests/js/utils';
@@ -96,10 +95,6 @@ describe( 'modules/analytics-4 webdatastreams', () => {
 
 	afterAll( () => {
 		API.setUsingCache( true );
-	} );
-
-	afterEach( () => {
-		unsubscribeFromAll( registry );
 	} );
 
 	describe( 'actions', () => {
@@ -685,35 +680,41 @@ describe( 'modules/analytics-4 webdatastreams', () => {
 					.getMatchedMeasurementIDsByPropertyIDs( propertyIDs );
 
 				expect( matchedProperties ).toEqual( {
-					1000: '1A2BCD345E',
+					1000: 'G-1A2BCD345E',
 				} );
 			} );
 		} );
 
 		describe( 'getAnalyticsConfigByMeasurementIDs', () => {
-			const accountSummaries = [
-				{
-					_id: '123456',
-					propertySummaries: [
-						{ _id: '1122334455' },
-						{ _id: '1122334456' },
-						{ _id: '1122334457' },
-					],
-				},
-				{
-					_id: '123457',
-					propertySummaries: [
-						{ _id: '1122334465' },
-						{ _id: '1122334466' },
-					],
-				},
-				{
-					_id: '123458',
-					propertySummaries: [ { _id: '1122334475' } ],
-				},
-			];
+			const accountSummaries = {
+				accountSummaries: [
+					{
+						_id: '123456',
+						propertySummaries: [
+							{ _id: '1122334455' },
+							{ _id: '1122334456' },
+							{ _id: '1122334457' },
+						],
+						account: 'accounts/123456',
+					},
+					{
+						_id: '123457',
+						propertySummaries: [
+							{ _id: '1122334465' },
+							{ _id: '1122334466' },
+						],
+						account: 'accounts/123457',
+					},
+					{
+						_id: '123458',
+						propertySummaries: [ { _id: '1122334475' } ],
+						account: 'accounts/123458',
+					},
+				],
+				nextPageToken: null,
+			};
 
-			const propertyIDs = accountSummaries
+			const propertyIDs = accountSummaries.accountSummaries
 				.map( ( { propertySummaries } ) =>
 					propertySummaries.map( ( { _id } ) => _id )
 				)
@@ -793,7 +794,10 @@ describe( 'modules/analytics-4 webdatastreams', () => {
 			it( 'should return NULL when no summaries are returned from the endpoint', () => {
 				registry
 					.dispatch( MODULES_ANALYTICS_4 )
-					.receiveGetAccountSummaries( [] );
+					.receiveGetAccountSummaries( {
+						accountSummaries: [],
+						nextPageToken: null,
+					} );
 
 				const config = registry
 					.select( MODULES_ANALYTICS_4 )
@@ -969,7 +973,7 @@ describe( 'modules/analytics-4 webdatastreams', () => {
 		} );
 
 		describe( 'isLoadingWebDataStreams', () => {
-			const accounts = fixtures.accountSummaries;
+			const accounts = fixtures.accountSummaries.accountSummaries;
 			const properties = accounts[ 1 ].propertySummaries;
 			const accountID = accounts[ 1 ]._id;
 			const propertyID = properties[ 0 ]._id;
@@ -994,7 +998,7 @@ describe( 'modules/analytics-4 webdatastreams', () => {
 					.finishResolution( 'getWebDataStreams', [ propertyID ] );
 				registry
 					.dispatch( MODULES_ANALYTICS_4 )
-					.receiveGetAccountSummaries( accounts );
+					.receiveGetAccountSummaries( fixtures.accountSummaries );
 				registry
 					.dispatch( MODULES_ANALYTICS_4 )
 					.finishResolution( 'getAccountSummaries', [] );

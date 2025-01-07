@@ -24,31 +24,25 @@ import { __ } from '@wordpress/i18n';
 /**
  * External dependencies
  */
-import invariant from 'invariant';
 import { isPlainObject } from 'lodash';
 
 /**
  * Internal dependencies
  */
 import API from 'googlesitekit-api';
-import Data from 'googlesitekit-data';
-import { createFetchStore } from '../../../googlesitekit/data/create-fetch-store';
-import { CORE_USER } from '../../../googlesitekit/datastore/user/constants';
-import { MODULES_ANALYTICS_4 } from './constants';
-import { DAY_IN_SECONDS, stringifyObject } from '../../../util';
-import { isValidDateRange } from '../../../util/report-validation';
 import {
-	normalizeReportOptions,
-	isValidDimensionFilters,
-	isValidDimensions,
-	isValidMetrics,
-	isValidMetricFilters,
-	isValidOrders,
-	isZeroReport,
-} from '../utils';
+	createRegistrySelector,
+	commonActions,
+	combineStores,
+} from 'googlesitekit-data';
+import { createFetchStore } from '../../../googlesitekit/data/create-fetch-store';
 import { createGatheringDataStore } from '../../../googlesitekit/modules/create-gathering-data-store';
-import { getSampleReportArgs } from '../utils/report-args';
-const { createRegistrySelector } = Data;
+import { CORE_USER } from '../../../googlesitekit/datastore/user/constants';
+import { CORE_SITE } from '../../../googlesitekit/datastore/site/constants';
+import { MODULES_ANALYTICS_4, DATE_RANGE_OFFSET } from './constants';
+import { DAY_IN_SECONDS, dateSub, stringifyObject } from '../../../util';
+import { normalizeReportOptions, isZeroReport } from '../utils';
+import { validateReport } from '../utils/validation';
 
 const fetchGetReportStore = createFetchStore( {
 	baseName: 'getReport',
@@ -72,61 +66,7 @@ const fetchGetReportStore = createFetchStore( {
 	argsToParams: ( options ) => {
 		return { options };
 	},
-	validateParams: ( { options } = {} ) => {
-		invariant(
-			isPlainObject( options ),
-			'options for Analytics 4 report must be an object.'
-		);
-		invariant(
-			isValidDateRange( options ),
-			'Either date range or start/end dates must be provided for Analytics 4 report.'
-		);
-
-		const {
-			metrics,
-			dimensions,
-			dimensionFilters,
-			metricFilters,
-			orderby,
-		} = normalizeReportOptions( options );
-
-		invariant(
-			metrics.length,
-			'Requests must specify at least one metric for an Analytics 4 report.'
-		);
-		invariant(
-			isValidMetrics( metrics ),
-			'metrics for an Analytics 4 report must be either a string, an array of strings, an object, an array of objects, or a mix of strings and objects. Objects must have a "name" property. Metric names must match the expression ^[a-zA-Z0-9_]+$.'
-		);
-
-		if ( dimensions ) {
-			invariant(
-				isValidDimensions( dimensions ),
-				'dimensions for an Analytics 4 report must be either a string, an array of strings, an object, an array of objects, or a mix of strings and objects. Objects must have a "name" property.'
-			);
-		}
-
-		if ( dimensionFilters ) {
-			invariant(
-				isValidDimensionFilters( dimensionFilters ),
-				'dimensionFilters for an Analytics 4 report must be a map of dimension names as keys and dimension values as values.'
-			);
-		}
-
-		if ( metricFilters ) {
-			invariant(
-				isValidMetricFilters( metricFilters ),
-				'metricFilters for an Analytics 4 report must be a map of metric names as keys and filter value(s) as numeric fields, depending on the filterType.'
-			);
-		}
-
-		if ( orderby ) {
-			invariant(
-				isValidOrders( orderby ),
-				'orderby for an Analytics 4 report must be an array of OrderBy objects where each object should have either a "metric" or "dimension" property, and an optional "desc" property.'
-			);
-		}
-	},
+	validateParams: ( { options } = {} ) => validateReport( options ),
 } );
 
 const gatheringDataStore = createGatheringDataStore( 'analytics-4', {
@@ -138,7 +78,7 @@ const gatheringDataStore = createGatheringDataStore( 'analytics-4', {
 		// eslint-disable-next-line @wordpress/no-unused-vars-before-return
 		const hasZeroData = select( MODULES_ANALYTICS_4 ).hasZeroData();
 
-		const args = getSampleReportArgs( select );
+		const args = select( MODULES_ANALYTICS_4 ).getSampleReportArgs();
 
 		const hasResolvedReport = select(
 			MODULES_ANALYTICS_4
@@ -183,7 +123,9 @@ const gatheringDataStore = createGatheringDataStore( 'analytics-4', {
 		}
 
 		// If the property was created within the last three days and has no data, assume it's still gathering data.
-		if ( propertyCreateTime > Date.now() - DAY_IN_SECONDS * 3 * 1000 ) {
+		const now = select( CORE_USER ).getReferenceDate();
+		const threeDaysAgo = dateSub( now, 3 * DAY_IN_SECONDS );
+		if ( propertyCreateTime > threeDaysAgo.getTime() ) {
 			return false;
 		}
 
@@ -197,7 +139,7 @@ const baseInitialState = {
 
 const baseResolvers = {
 	*getReport( options = {} ) {
-		const registry = yield Data.commonActions.getRegistry();
+		const registry = yield commonActions.getRegistry();
 		const existingReport = registry
 			.select( MODULES_ANALYTICS_4 )
 			.getReport( options );
@@ -350,7 +292,9 @@ const baseSelectors = {
 	 */
 	hasZeroData: createRegistrySelector(
 		( select ) => ( state, reportArgs ) => {
-			const args = reportArgs || getSampleReportArgs( select );
+			const args =
+				reportArgs ||
+				select( MODULES_ANALYTICS_4 ).getSampleReportArgs();
 
 			// Disable reason: select needs to be called here or it will never run.
 			// eslint-disable-next-line @wordpress/no-unused-vars-before-return
@@ -377,6 +321,36 @@ const baseSelectors = {
 	),
 
 	/**
+	 * Returns report args for a sample report.
+	 *
+	 * @since 1.107.0
+	 * @since 1.124.0 Moved from the main analytics-4 datastore file to utils.
+	 * @since 1.136.0 Moved back to the main analytics-4 datastore file and updated to be a selector.
+	 *
+	 * @param {Function} select The select function of the registry.
+	 * @return {Object} Report args.
+	 */
+	getSampleReportArgs: createRegistrySelector( ( select ) => () => {
+		const { startDate, endDate } = select( CORE_USER ).getDateRangeDates( {
+			offsetDays: DATE_RANGE_OFFSET,
+		} );
+
+		const args = {
+			dimensions: [ 'date' ],
+			metrics: [ { name: 'totalUsers' } ],
+			startDate,
+			endDate,
+		};
+
+		const url = select( CORE_SITE ).getCurrentEntityURL();
+		if ( url ) {
+			args.url = url;
+		}
+
+		return args;
+	} ),
+
+	/**
 	 * Gets a given report for each of the provided audiences.
 	 *
 	 * TODO: This will be refactored to use pivot reports in #8484.
@@ -390,19 +364,42 @@ const baseSelectors = {
 	 */
 	getReportForAllAudiences: createRegistrySelector(
 		( select ) => ( state, options, audienceResourceNames ) => {
-			return audienceResourceNames?.map( ( audienceResourceName ) =>
-				select( MODULES_ANALYTICS_4 ).getReport( {
+			return audienceResourceNames?.map( ( audienceResourceName ) => {
+				const partialDataSiteKitAudience =
+					select( MODULES_ANALYTICS_4 ).getPartialDataSiteKitAudience(
+						audienceResourceName
+					);
+
+				if ( partialDataSiteKitAudience === undefined ) {
+					return undefined;
+				}
+
+				const dimensionFilters = {};
+
+				if ( partialDataSiteKitAudience ) {
+					dimensionFilters.newVsReturning =
+						partialDataSiteKitAudience.audienceSlug ===
+						'new-visitors'
+							? 'new'
+							: 'returning';
+				} else {
+					dimensionFilters.audienceResourceName =
+						audienceResourceName;
+				}
+
+				return select( MODULES_ANALYTICS_4 ).getReport( {
 					...options,
 					dimensionFilters: {
-						audienceResourceName,
+						...options.dimensionFilters,
+						...dimensionFilters,
 					},
-				} )
-			);
+				} );
+			} );
 		}
 	),
 };
 
-const store = Data.combineStores( fetchGetReportStore, gatheringDataStore, {
+const store = combineStores( fetchGetReportStore, gatheringDataStore, {
 	initialState: baseInitialState,
 	resolvers: baseResolvers,
 	selectors: baseSelectors,

@@ -24,13 +24,13 @@ import classnames from 'classnames';
 /**
  * WordPress dependencies
  */
-import { Fragment, useCallback, useEffect, useState } from '@wordpress/element';
+import { Fragment, useEffect, useState } from '@wordpress/element';
 import { useMount } from 'react-use';
 
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { useSelect, useDispatch } from 'googlesitekit-data';
 import {
 	CONTEXT_MAIN_DASHBOARD_KEY_METRICS,
 	CONTEXT_MAIN_DASHBOARD_TRAFFIC,
@@ -46,12 +46,12 @@ import {
 	AudienceSegmentationSetupCTAWidget,
 	AudienceSelectionPanel,
 } from '../modules/analytics-4/components/audience-segmentation/dashboard';
+import ReaderRevenueManagerSetupCTABanner from '../modules/reader-revenue-manager/components/dashboard/ReaderRevenueManagerSetupCTABanner';
 import EntitySearchInput from './EntitySearchInput';
 import DateRangeSelector from './DateRangeSelector';
 import HelpMenu from './help/HelpMenu';
 import BannerNotifications from './notifications/BannerNotifications';
 import SurveyViewTrigger from './surveys/SurveyViewTrigger';
-import AdsModuleSetupCTAWidget from './notifications/AdsModuleSetupCTAWidget';
 import CurrentSurveyPortal from './surveys/CurrentSurveyPortal';
 import ConsentModeSetupCTAWidget from './consent-mode/ConsentModeSetupCTAWidget';
 import ScrollEffect from './ScrollEffect';
@@ -70,46 +70,34 @@ import {
 import { CORE_WIDGETS } from '../googlesitekit/widgets/datastore/constants';
 import useViewOnly from '../hooks/useViewOnly';
 import { CORE_FORMS } from '../googlesitekit/datastore/forms/constants';
-import { CORE_MODULES } from '../googlesitekit/modules/datastore/constants';
-import { CORE_SITE } from '../googlesitekit/datastore/site/constants';
-import {
-	EDIT_SCOPE,
-	FORM_CUSTOM_DIMENSIONS_CREATE,
-	MODULES_ANALYTICS_4,
-} from '../modules/analytics-4/datastore/constants';
 import OfflineNotification from './notifications/OfflineNotification';
 import OverlayNotificationsRenderer from './OverlayNotification/OverlayNotificationsRenderer';
-import { useMonitorInternetConnection } from '../hooks/useMonitorInternetConnection';
+import ModuleDashboardEffects from './ModuleDashboardEffects';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 import { useFeature } from '../hooks/useFeature';
-const { useSelect, useDispatch } = Data;
+import { useMonitorInternetConnection } from '../hooks/useMonitorInternetConnection';
+import useQueryArg from '../hooks/useQueryArg';
+import { getNavigationalScrollTop } from '../util/scroll';
+import { CORE_SITE } from '../googlesitekit/datastore/site/constants';
+import useDisplayCTAWidget from './KeyMetrics/hooks/useDisplayCTAWidget';
+import Notifications from './notifications/Notifications';
+import {
+	NOTIFICATION_AREAS,
+	NOTIFICATION_GROUPS,
+} from '../googlesitekit/notifications/datastore/constants';
 
 export default function DashboardMainApp() {
 	const audienceSegmentationEnabled = useFeature( 'audienceSegmentation' );
+	const readerRevenueManagerEnabled = useFeature( 'rrmModule' );
 
 	const [ showSurveyPortal, setShowSurveyPortal ] = useState( false );
 
 	const viewOnlyDashboard = useViewOnly();
 
-	const isKeyMetricsSetupCompleted = useSelect( ( select ) =>
-		select( CORE_SITE ).isKeyMetricsSetupCompleted()
-	);
+	const breakpoint = useBreakpoint();
 
-	const isGA4Connected = useSelect( ( select ) =>
-		select( CORE_MODULES ).isModuleConnected( 'analytics-4' )
-	);
+	const [ widgetArea, setWidgetArea ] = useQueryArg( 'widgetArea' );
 
-	const hasAnalyticsEditScope = useSelect( ( select ) =>
-		select( CORE_USER ).hasScope( EDIT_SCOPE )
-	);
-
-	const autoSubmit = useSelect( ( select ) =>
-		select( CORE_FORMS ).getValue(
-			FORM_CUSTOM_DIMENSIONS_CREATE,
-			'autoSubmit'
-		)
-	);
-
-	const { createCustomDimensions } = useDispatch( MODULES_ANALYTICS_4 );
 	const { setValues } = useDispatch( CORE_FORMS );
 
 	const grantedScopes = useSelect( ( select ) =>
@@ -127,10 +115,44 @@ export default function DashboardMainApp() {
 			grantedScopes.includes( scope )
 		);
 
+	const configuredAudiences = useSelect(
+		( select ) =>
+			audienceSegmentationEnabled &&
+			select( CORE_USER ).getConfiguredAudiences()
+	);
+
 	useMount( () => {
+		// Render the current survey portal in 5 seconds after the initial rendering.
 		if ( ! viewOnlyDashboard ) {
-			// Render the current survey portal in 5 seconds after the initial rendering.
 			setTimeout( () => setShowSurveyPortal( true ), 5000 );
+		}
+
+		// Scroll to a widget area if specified in the URL.
+		if ( widgetArea ) {
+			const widgetClass = `.googlesitekit-widget-area--${ widgetArea }`;
+
+			setTimeout( () => {
+				function scrollToWidgetArea() {
+					global.scrollTo( {
+						top: getNavigationalScrollTop(
+							widgetClass,
+							breakpoint
+						),
+						behavior: 'smooth',
+					} );
+				}
+
+				function handleScrollEnd() {
+					scrollToWidgetArea();
+					global.removeEventListener( 'scrollend', handleScrollEnd );
+				}
+
+				global.addEventListener( 'scrollend', handleScrollEnd );
+
+				scrollToWidgetArea();
+
+				setWidgetArea( undefined );
+			}, 100 );
 		}
 	} );
 
@@ -147,36 +169,6 @@ export default function DashboardMainApp() {
 		hasReceivedGrantedScopes,
 		setValues,
 		temporaryPersistedPermissionsError,
-	] );
-
-	const createDimensionsAndUpdateForm = useCallback( async () => {
-		await createCustomDimensions();
-		setValues( FORM_CUSTOM_DIMENSIONS_CREATE, {
-			isAutoCreatingCustomDimensions: false,
-		} );
-	}, [ createCustomDimensions, setValues ] );
-
-	useEffect( () => {
-		if (
-			isKeyMetricsSetupCompleted &&
-			isGA4Connected &&
-			hasAnalyticsEditScope &&
-			autoSubmit
-		) {
-			setValues( FORM_CUSTOM_DIMENSIONS_CREATE, {
-				autoSubmit: false,
-				isAutoCreatingCustomDimensions: true,
-			} );
-			createDimensionsAndUpdateForm();
-		}
-	}, [
-		autoSubmit,
-		createCustomDimensions,
-		hasAnalyticsEditScope,
-		isKeyMetricsSetupCompleted,
-		isGA4Connected,
-		setValues,
-		createDimensionsAndUpdateForm,
 	] );
 
 	const viewableModules = useSelect( ( select ) => {
@@ -230,6 +222,23 @@ export default function DashboardMainApp() {
 		select( CORE_USER ).isKeyMetricsWidgetHidden()
 	);
 
+	const displayCTAWidget = useDisplayCTAWidget();
+
+	const showKeyMetricsSelectionPanel = useSelect( ( select ) => {
+		if (
+			select( CORE_SITE ).isKeyMetricsSetupCompleted() === true &&
+			isKeyMetricsWidgetHidden === false
+		) {
+			return true;
+		}
+
+		return (
+			select( CORE_USER ).isAuthenticated() &&
+			select( CORE_SITE ).isKeyMetricsSetupCompleted() === false &&
+			displayCTAWidget
+		);
+	} );
+
 	useMonitorInternetConnection();
 
 	let lastWidgetAnchor = null;
@@ -249,6 +258,7 @@ export default function DashboardMainApp() {
 	return (
 		<Fragment>
 			<ScrollEffect />
+			<ModuleDashboardEffects />
 
 			<Header subHeader={ <BannerNotifications /> } showNavigation>
 				<EntitySearchInput />
@@ -263,9 +273,21 @@ export default function DashboardMainApp() {
 						<AudienceSegmentationSetupCTAWidget />
 					) }
 					<ConsentModeSetupCTAWidget />
-					<AdsModuleSetupCTAWidget />
 				</Fragment>
 			) }
+
+			{ ! viewOnlyDashboard && (
+				<Fragment>
+					{ readerRevenueManagerEnabled && (
+						<ReaderRevenueManagerSetupCTABanner />
+					) }
+				</Fragment>
+			) }
+
+			<Notifications
+				areaSlug={ NOTIFICATION_AREAS.BANNERS_BELOW_NAV }
+				groupID={ NOTIFICATION_GROUPS.SETUP_CTAS }
+			/>
 
 			<OverlayNotificationsRenderer />
 
@@ -319,9 +341,11 @@ export default function DashboardMainApp() {
 
 			{ showSurveyPortal && <CurrentSurveyPortal /> }
 
-			<MetricsSelectionPanel />
+			{ showKeyMetricsSelectionPanel && <MetricsSelectionPanel /> }
 
-			{ audienceSegmentationEnabled && <AudienceSelectionPanel /> }
+			{ audienceSegmentationEnabled && configuredAudiences && (
+				<AudienceSelectionPanel />
+			) }
 
 			<OfflineNotification />
 		</Fragment>

@@ -19,12 +19,13 @@
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { combineStores, commonStore } from 'googlesitekit-data';
 import cache from './cache';
 import connection from './connection';
 import consentMode from './consent-mode';
 import conversionTracking from './conversion-tracking';
 import errors from './errors';
+import firstPartyMode from './first-party-mode';
 import html from './html';
 import info from './info';
 import reset from './reset';
@@ -36,12 +37,13 @@ import { CORE_SITE } from './constants';
 import notifications from './notifications';
 import { createErrorStore } from '../../data/create-error-store';
 
-const store = Data.combineStores(
-	Data.commonStore,
+const store = combineStores(
+	commonStore,
 	connection,
 	consentMode,
 	conversionTracking,
 	errors,
+	firstPartyMode,
 	html,
 	info,
 	developerPlugin,

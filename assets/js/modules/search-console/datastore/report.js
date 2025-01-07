@@ -26,7 +26,11 @@ import { isPlainObject } from 'lodash';
  * Internal dependencies
  */
 import API from 'googlesitekit-api';
-import Data from 'googlesitekit-data';
+import {
+	createRegistrySelector,
+	commonActions,
+	combineStores,
+} from 'googlesitekit-data';
 import { CORE_USER } from '../../../googlesitekit/datastore/user/constants';
 import { CORE_SITE } from '../../../googlesitekit/datastore/site/constants';
 import { DATE_RANGE_OFFSET, MODULES_SEARCH_CONSOLE } from './constants';
@@ -38,37 +42,6 @@ import {
 } from '../../../util/report-validation';
 import { isZeroReport } from '../util';
 import { createGatheringDataStore } from '../../../googlesitekit/modules/create-gathering-data-store';
-const { createRegistrySelector } = Data;
-
-/**
- * Returns report args for a sample report.
- *
- * @since 1.107.0
- *
- * @param {Function} select The select function of the registry.
- * @return {Object} Report args.
- */
-const getSampleReportArgs = ( select ) => {
-	const url = select( CORE_SITE ).getCurrentEntityURL();
-	const { compareStartDate: startDate, endDate } = select(
-		CORE_USER
-	).getDateRangeDates( {
-		compare: true,
-		offsetDays: DATE_RANGE_OFFSET,
-	} );
-
-	const args = {
-		startDate,
-		endDate,
-		dimensions: 'date',
-	};
-
-	if ( url ) {
-		args.url = url;
-	}
-
-	return args;
-};
 
 const fetchGetReportStore = createFetchStore( {
 	baseName: 'getReport',
@@ -118,13 +91,13 @@ const gatheringDataStore = createGatheringDataStore( 'search-console', {
 	dataAvailable:
 		global._googlesitekitModulesData?.[ 'data_available_search-console' ],
 	selectDataAvailability: createRegistrySelector( ( select ) => () => {
-		const reportArgs = getSampleReportArgs( select );
+		const args = select( MODULES_SEARCH_CONSOLE ).getSampleReportArgs();
 		// Disable reason: select needs to be called here or it will never run.
 		// eslint-disable-next-line @wordpress/no-unused-vars-before-return
-		const report = select( MODULES_SEARCH_CONSOLE ).getReport( reportArgs );
+		const report = select( MODULES_SEARCH_CONSOLE ).getReport( args );
 		const hasResolvedReport = select(
 			MODULES_SEARCH_CONSOLE
-		).hasFinishedResolution( 'getReport', [ reportArgs ] );
+		).hasFinishedResolution( 'getReport', [ args ] );
 
 		if ( ! hasResolvedReport ) {
 			return undefined;
@@ -132,7 +105,7 @@ const gatheringDataStore = createGatheringDataStore( 'search-console', {
 
 		const hasReportError = select(
 			MODULES_SEARCH_CONSOLE
-		).getErrorForSelector( 'getReport', [ reportArgs ] );
+		).getErrorForSelector( 'getReport', [ args ] );
 
 		// If there is an error, return `null` since we don't know if there is data or not.
 		if ( hasReportError || ! Array.isArray( report ) ) {
@@ -153,7 +126,7 @@ const baseInitialState = {
 
 const baseResolvers = {
 	*getReport( options = {} ) {
-		const registry = yield Data.commonActions.getRegistry();
+		const registry = yield commonActions.getRegistry();
 		const existingReport = registry
 			.select( MODULES_SEARCH_CONSOLE )
 			.getReport( options );
@@ -209,7 +182,7 @@ const baseSelectors = {
 			return true;
 		}
 
-		const args = getSampleReportArgs( select );
+		const args = select( MODULES_SEARCH_CONSOLE ).getSampleReportArgs();
 
 		// Disable reason: select needs to be called here or it will never run.
 		// eslint-disable-next-line @wordpress/no-unused-vars-before-return
@@ -229,9 +202,40 @@ const baseSelectors = {
 
 		return isZeroReport( report );
 	} ),
+
+	/**
+	 * Returns report args for a sample report.
+	 *
+	 * @since 1.107.0
+	 * @since 1.136.0 Updated the function to be a selector.
+	 *
+	 * @param {Function} select The select function of the registry.
+	 * @return {Object} Report args.
+	 */
+	getSampleReportArgs: createRegistrySelector( ( select ) => () => {
+		const url = select( CORE_SITE ).getCurrentEntityURL();
+		const { compareStartDate: startDate, endDate } = select(
+			CORE_USER
+		).getDateRangeDates( {
+			compare: true,
+			offsetDays: DATE_RANGE_OFFSET,
+		} );
+
+		const args = {
+			startDate,
+			endDate,
+			dimensions: 'date',
+		};
+
+		if ( url ) {
+			args.url = url;
+		}
+
+		return args;
+	} ),
 };
 
-const store = Data.combineStores( fetchGetReportStore, gatheringDataStore, {
+const store = combineStores( fetchGetReportStore, gatheringDataStore, {
 	initialState: baseInitialState,
 	resolvers: baseResolvers,
 	selectors: baseSelectors,

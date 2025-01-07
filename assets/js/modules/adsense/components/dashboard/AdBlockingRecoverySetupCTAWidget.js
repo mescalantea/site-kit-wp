@@ -34,7 +34,7 @@ import { __ } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { useSelect, useDispatch } from 'googlesitekit-data';
 import AdsenseAdBlockingRecoverySVG from '../../../../../svg/graphics/adsense-ad-blocking-recovery.svg';
 import {
 	AdminMenuTooltip,
@@ -70,8 +70,6 @@ import {
 import { ACCOUNT_STATUS_READY, SITE_STATUS_READY } from '../../util';
 import SurveyViewTrigger from '../../../../components/surveys/SurveyViewTrigger';
 
-const { useSelect, useDispatch } = Data;
-
 function AdBlockingRecoverySetupCTAWidget( { Widget, WidgetNull } ) {
 	const breakpoint = useBreakpoint();
 	const viewOnlyDashboard = useViewOnly();
@@ -92,6 +90,12 @@ function AdBlockingRecoverySetupCTAWidget( { Widget, WidgetNull } ) {
 	);
 	const dismissCount = useSelect( ( select ) =>
 		select( CORE_USER ).getPromptDismissCount(
+			AD_BLOCKING_RECOVERY_MAIN_NOTIFICATION_KEY
+		)
+	);
+
+	const isDismissingPrompt = useSelect( ( select ) =>
+		select( CORE_USER ).isDismissingPrompt(
 			AD_BLOCKING_RECOVERY_MAIN_NOTIFICATION_KEY
 		)
 	);
@@ -150,6 +154,7 @@ function AdBlockingRecoverySetupCTAWidget( { Widget, WidgetNull } ) {
 		! viewOnlyDashboard &&
 		hasExistingAdBlockingRecoveryTag === false &&
 		isDismissed === false &&
+		isDismissingPrompt === false &&
 		adBlockingRecoverySetupStatus === '' &&
 		accountStatus === ACCOUNT_STATUS_READY &&
 		siteStatus === SITE_STATUS_READY &&

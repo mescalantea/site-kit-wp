@@ -65,6 +65,8 @@ module.exports = ( mode, rules, ANALYZE ) => {
 			'googlesitekit-datastore-ui':
 				'./assets/js/googlesitekit-datastore-ui.js',
 			'googlesitekit-modules': './assets/js/googlesitekit-modules.js',
+			'googlesitekit-notifications':
+				'./assets/js/googlesitekit-notifications.js',
 			'googlesitekit-widgets': './assets/js/googlesitekit-widgets.js',
 			'googlesitekit-modules-ads':
 				'./assets/js/googlesitekit-modules-ads.js',
@@ -74,8 +76,12 @@ module.exports = ( mode, rules, ANALYZE ) => {
 				'./assets/js/googlesitekit-modules-analytics-4.js',
 			'googlesitekit-modules-pagespeed-insights':
 				'assets/js/googlesitekit-modules-pagespeed-insights.js',
+			'googlesitekit-modules-reader-revenue-manager':
+				'./assets/js/googlesitekit-modules-reader-revenue-manager.js',
 			'googlesitekit-modules-search-console':
 				'./assets/js/googlesitekit-modules-search-console.js',
+			'googlesitekit-modules-sign-in-with-google':
+				'./assets/js/googlesitekit-modules-sign-in-with-google.js',
 			'googlesitekit-modules-tagmanager':
 				'./assets/js/googlesitekit-modules-tagmanager.js',
 			'googlesitekit-user-input':
@@ -87,6 +93,8 @@ module.exports = ( mode, rules, ANALYZE ) => {
 				'./assets/js/googlesitekit-components-gm2.js',
 			'googlesitekit-components-gm3':
 				'./assets/js/googlesitekit-components-gm3.js',
+			'googlesitekit-metric-selection':
+				'./assets/js/googlesitekit-metric-selection.js',
 			// Old Modules
 			'googlesitekit-activation':
 				'./assets/js/googlesitekit-activation.js',

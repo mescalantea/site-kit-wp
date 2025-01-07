@@ -17,41 +17,29 @@
 /**
  * WordPress dependencies
  */
-import {
-	createInterpolateElement,
-	useState,
-	Fragment,
-} from '@wordpress/element';
+import { useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
 
 /**
  * Internal dependencies
  */
 import { Switch } from 'googlesitekit-components';
-import Data from 'googlesitekit-data';
+import { useDispatch, useSelect } from 'googlesitekit-data';
 import { CORE_SITE } from '../../googlesitekit/datastore/site/constants';
 import ErrorText from '../../components/ErrorText';
-import Link from '../Link';
 import LoadingWrapper from '../LoadingWrapper';
 import ConfirmDisableConversionTrackingDialog from './ConfirmDisableConversionTrackingDialog';
-import { useFeature } from '../../hooks/useFeature';
+import useViewContext from '../../hooks/useViewContext';
+import { trackEvent } from '../../util';
 import PropTypes from 'prop-types';
 
-const { useDispatch, useSelect } = Data;
-
-export default function ConversionTrackingToggle( { loading } ) {
-	const iceEnabled = useFeature( 'conversionInfra' );
+export default function ConversionTrackingToggle( { children, loading } ) {
+	const viewContext = useViewContext();
 	const [ saveError ] = useState( null );
 	const [ showConfirmDialog, setShowConfirmDialog ] = useState( false );
 
 	const isConversionTrackingEnabled = useSelect( ( select ) =>
 		select( CORE_SITE ).isConversionTrackingEnabled()
-	);
-
-	const conversionTrackingDocumentationURL = useSelect( ( select ) =>
-		select( CORE_SITE ).getDocumentationLinkURL(
-			'enhanced-conversion-tracking'
-		)
 	);
 
 	const isSaving = useSelect( ( select ) =>
@@ -60,33 +48,35 @@ export default function ConversionTrackingToggle( { loading } ) {
 
 	const { setConversionTrackingEnabled } = useDispatch( CORE_SITE );
 
-	if ( ! iceEnabled ) {
-		return null;
-	}
-
 	return (
-		<Fragment>
+		<div>
 			<LoadingWrapper loading={ loading } width="180px" height="21.3px">
-				<Switch
-					label={ __(
-						'Enable enhanced conversion tracking',
-						'google-site-kit'
-					) }
-					checked={ isConversionTrackingEnabled }
-					disabled={ isSaving || loading }
-					onClick={ () => {
-						// If Conversion Tracking is currently enabled, show a confirmation
-						// dialog warning users about the impact of disabling it.
-						if ( isConversionTrackingEnabled ) {
-							setShowConfirmDialog( true );
-						} else {
-							// Conversion Tracking is not currently enabled, so this toggle
-							// enables it.
-							setConversionTrackingEnabled( true );
-						}
-					} }
-					hideLabel={ false }
-				/>
+				<div className="googlesitekit-module-settings-group__switch">
+					<Switch
+						label={ __(
+							'Enhanced conversion tracking',
+							'google-site-kit'
+						) }
+						checked={ isConversionTrackingEnabled }
+						disabled={ isSaving || loading }
+						onClick={ () => {
+							// If Conversion Tracking is currently enabled, show a confirmation
+							// dialog warning users about the impact of disabling it.
+							if ( isConversionTrackingEnabled ) {
+								trackEvent( `${ viewContext }`, 'ect_disable' );
+
+								setShowConfirmDialog( true );
+							} else {
+								trackEvent( `${ viewContext }`, 'ect_enable' );
+
+								// Conversion Tracking is not currently enabled, so this toggle
+								// enables it.
+								setConversionTrackingEnabled( true );
+							}
+						} }
+						hideLabel={ false }
+					/>
+				</div>
 			</LoadingWrapper>
 			{ !! saveError && <ErrorText message={ saveError.message } /> }
 			<LoadingWrapper
@@ -99,42 +89,30 @@ export default function ConversionTrackingToggle( { loading } ) {
 				tabletWidth="540px"
 				tabletHeight="84px"
 			>
-				<p className="googlesitekit-settings-module__fields-group-helper-text">
-					{ createInterpolateElement(
-						__(
-							'Conversion tracking allows you to measure additional events on your site from other plugins that Site Kit integrates with to optimize your campaign performance. <a>Learn more</a>',
-							'google-site-kit'
-						),
-						{
-							a: (
-								<Link
-									href={ conversionTrackingDocumentationURL }
-									external
-									aria-label={ __(
-										'Learn more about conversion tracking',
-										'google-site-kit'
-									) }
-								/>
-							),
-						}
-					) }
+				<p className="googlesitekit-module-settings-group__helper-text">
+					{ children }
 				</p>
 			</LoadingWrapper>
 			{ showConfirmDialog && (
 				<ConfirmDisableConversionTrackingDialog
 					onConfirm={ () => {
+						trackEvent( `${ viewContext }`, 'ect_confirm_disable' );
+
 						setConversionTrackingEnabled( false );
 						setShowConfirmDialog( false );
 					} }
 					onCancel={ () => {
+						trackEvent( `${ viewContext }`, 'ect_cancel_disable' );
+
 						setShowConfirmDialog( false );
 					} }
 				/>
 			) }
-		</Fragment>
+		</div>
 	);
 }
 
 ConversionTrackingToggle.propTypes = {
+	children: PropTypes.node.isRequired,
 	loading: PropTypes.bool,
 };

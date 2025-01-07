@@ -29,8 +29,8 @@ import { MODULES_ANALYTICS_4 } from './constants';
 import {
 	createTestRegistry,
 	provideModules,
+	provideSiteInfo,
 	provideUserAuthentication,
-	unsubscribeFromAll,
 	untilResolved,
 } from '../../../../../tests/js/utils';
 import {
@@ -68,10 +68,6 @@ describe( 'modules/analytics-4 custom-dimensions', () => {
 		registry.dispatch( CORE_USER ).receiveCapabilities( {
 			googlesitekit_manage_options: true,
 		} );
-	} );
-
-	afterEach( () => {
-		unsubscribeFromAll( registry );
 	} );
 
 	afterAll( () => {
@@ -192,6 +188,9 @@ describe( 'modules/analytics-4 custom-dimensions', () => {
 				},
 			};
 			it( 'does not make a network request if there are no missing custom dimensions', async () => {
+				provideSiteInfo( registry, {
+					postTypes: [ { slug: 'product', label: 'Product' } ],
+				} );
 				registry.dispatch( MODULES_ANALYTICS_4 ).setSettings( {
 					propertyID,
 					availableCustomDimensions: customDimensionNames,

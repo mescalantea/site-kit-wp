@@ -16,9 +16,19 @@
  * limitations under the License.
  */
 
+export const AUDIENCE_ADD_GROUP_NOTICE_SLUG =
+	'audience-segmentation-add-group-notice';
 export const AUDIENCE_SELECTION_PANEL_OPENED_KEY =
 	'googlesitekit-audience-selection-panel-opened';
 export const AUDIENCE_SELECTION_FORM = 'audience-selection-form';
 export const AUDIENCE_SELECTED = 'audience-selected';
+export const AUDIENCE_SELECTION_CHANGED = 'audience-selection-changed';
+export const AUDIENCE_CREATION_NOTICE_SLUG =
+	'audience-segmentation-creation-notice';
+export const AUDIENCE_CREATION_SUCCESS_NOTICE_SLUG =
+	'audience-segmentation-creation-success-notice';
 export const MIN_SELECTED_AUDIENCES_COUNT = 1;
 export const MAX_SELECTED_AUDIENCES_COUNT = 3;
+export const AUDIENCE_CREATION_EDIT_SCOPE_NOTICE_SLUG =
+	'audience-creation-edit-scope-notice';
+export const AUDIENCE_CREATION_FORM = 'audience-creation-form';

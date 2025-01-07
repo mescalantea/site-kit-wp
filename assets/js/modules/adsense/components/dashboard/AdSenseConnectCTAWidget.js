@@ -30,7 +30,7 @@ import PropTypes from 'prop-types';
 /**
  * Internal dependencies
  */
-import Data from 'googlesitekit-data';
+import { useSelect, useDispatch } from 'googlesitekit-data';
 import AdSenseConnectCTA from '../common/AdSenseConnectCTA';
 import {
 	ADSENSE_CTA_WIDGET_DISMISSED_ITEM_KEY,
@@ -47,8 +47,6 @@ import {
 	AdminMenuTooltip,
 } from '../../../../components/AdminMenuTooltip';
 
-const { useDispatch, useSelect } = Data;
-
 function AdSenseConnectCTAWidget( { Widget, WidgetNull } ) {
 	const { dismissItem } = useDispatch( CORE_USER );
 
@@ -63,6 +61,11 @@ function AdSenseConnectCTAWidget( { Widget, WidgetNull } ) {
 	);
 	const hasDismissedWidget = useSelect( ( select ) =>
 		select( CORE_USER ).isItemDismissed(
+			ADSENSE_CTA_WIDGET_DISMISSED_ITEM_KEY
+		)
+	);
+	const isDismissingItem = useSelect( ( select ) =>
+		select( CORE_USER ).isDismissingItem(
 			ADSENSE_CTA_WIDGET_DISMISSED_ITEM_KEY
 		)
 	);
@@ -104,7 +107,11 @@ function AdSenseConnectCTAWidget( { Widget, WidgetNull } ) {
 
 	// Check for `false` explicitly, as these variables will be `undefined`
 	// while loading.
-	if ( adSenseModuleConnected === false && hasDismissedWidget === false ) {
+	if (
+		adSenseModuleConnected === false &&
+		hasDismissedWidget === false &&
+		isDismissingItem === false
+	) {
 		return (
 			<Widget noPadding>
 				<AdSenseConnectCTA onDismissModule={ handleDismissModule } />

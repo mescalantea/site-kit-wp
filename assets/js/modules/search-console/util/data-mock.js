@@ -30,8 +30,7 @@ import { map, reduce, take } from 'rxjs/operators';
  * Internal dependencies
  */
 import { MODULES_SEARCH_CONSOLE } from '../datastore/constants';
-import { getDateString, isValidDateString } from '../../../util';
-import { stringToDate } from '../../../util/date-range/string-to-date';
+import { getDateString, isValidDateString, stringToDate } from '../../../util';
 
 /**
  * Generates mock data for Search Console reports.
@@ -79,9 +78,14 @@ export function getSearchConsoleMockResponse( args ) {
 	const ops = [
 		// Converts range number to a date string.
 		map( ( item ) => {
+			// Valid use of `new Date()` with an argument.
+			// eslint-disable-next-line sitekit/no-direct-date
 			const updatedMilliseconds = new Date( startDate ).setDate(
 				startDate.getDate() + item
 			);
+
+			// Valid use of `new Date()` with an argument.
+			// eslint-disable-next-line sitekit/no-direct-date
 			return getDateString( new Date( updatedMilliseconds ) );
 		} ),
 		// Add dimension and metric values.

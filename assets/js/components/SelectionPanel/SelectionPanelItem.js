@@ -22,9 +22,15 @@
 import PropTypes from 'prop-types';
 
 /**
+ * WordPress dependencies
+ */
+import { __ } from '@wordpress/i18n';
+
+/**
  * Internal dependencies
  */
 import SelectionBox from '../SelectionBox';
+import Badge from '../Badge';
 
 export default function SelectionPanelItem( {
 	children,
@@ -37,10 +43,13 @@ export default function SelectionPanelItem( {
 	onCheckboxChange,
 	subtitle,
 	suffix,
+	badge,
+	isNewlyDetected,
 } ) {
 	return (
 		<div className="googlesitekit-selection-panel-item">
 			<SelectionBox
+				badge={ badge }
 				checked={ isItemSelected }
 				disabled={ isItemDisabled }
 				id={ id }
@@ -56,6 +65,9 @@ export default function SelectionPanelItem( {
 				{ description }
 				{ children }
 			</SelectionBox>
+			{ isNewlyDetected && (
+				<Badge label={ __( 'New', 'google-site-kit' ) } />
+			) }
 			{ suffix && (
 				<span className="googlesitekit-selection-panel-item__suffix">
 					{ suffix }
@@ -76,4 +88,6 @@ SelectionPanelItem.propTypes = {
 	onCheckboxChange: PropTypes.func,
 	subtitle: PropTypes.string,
 	suffix: PropTypes.node,
+	badge: PropTypes.node,
+	isNewlyDetected: PropTypes.bool,
 };
